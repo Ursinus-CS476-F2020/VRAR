@@ -1,0 +1,19 @@
+plugins:
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: true
+
+theme: jekyll-theme-slate
+
+title: "VRAR"
+description: "Computer Graphics"
+
+url                      : https://ursinus-cs476-f2020.github.io # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
+baseurl                  : "/VRAR" # the subpath of your site, e.g. "/blog"
+    
+# Reading Files
+include:
+  - .htaccess
+  - _pages

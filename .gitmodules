@@ -1,0 +1,3 @@
+[submodule "assets/ggslac"]
+	path = assets/ggslac
+	url = https://github.com/ctralie/ggslac.git
