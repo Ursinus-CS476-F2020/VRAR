@@ -1,0 +1,129 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!--External Libraries!-->
+<!--<script type="text/javascript" src="js/gl-matrix.js"></script>!-->
+<script type="text/javascript" src = "ggslac/jslibs/dat.gui.min.js"></script>
+<script type="text/javascript" src = "ggslac/jslibs/gl-matrix-min.js"></script>
+<script type="text/javascript" src="ggslac/jslibs/webgl-utils.js"></script>
+<script type="text/javascript" src="ggslac/jslibs/webgl-debug.js"></script>
+<script type="text/javascript" src="ggslac/jslibs/jquery-3.5.1.min.js"></script>
+
+<!--Our Scripts!-->
+<script src="ggslac/geometry/polymesh.js"></script>
+<script src="ggslac/geometry/basicmesh.js"></script>
+<script src="ggslac/geometry/primitives3d.js"></script>
+<script src="ggslac/geometry/cameras3d.js"></script>
+<script src="ggslac/shaders/shaders.js"></script>
+<script src="ggslac/utils/simpledraw.js"></script>
+<script src="ggslac/viewers/basecanvas.js"></script>
+<script src="ggslac/viewers/scenecanvas.js"></script>
+<script src="ggslac/viewers/offscreen.js"></script>
+</head>
+
+<body>
+
+    <button onclick="openFullscreen()">fullscreen</button>
+<table><tr id="mainTable"><td>
+<canvas id="GLCanvas1" style="border: none;" width="400" height="400"></canvas>
+</td><td>
+<canvas id="GLCanvas2" style="border: none;" width="400" height="400"></canvas>
+</td>
+</td>
+</tr>
+</table>
+<canvas id="mycanvas" style="border: none;" width="800" height="800"></canvas>
+
+<script>
+    function openFullscreen() {
+        let elem = document.getElementById("mainTable");
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+            elem.msRequestFullscreen();
+        }
+    }
+
+    // Step 1: Create rendering engine
+    // IPD between 57 and 70 mm
+    let IPD = 65/1000;
+
+    let canvas1 = document.getElementById("GLCanvas1");
+    let ctx1 = canvas1.getContext("2d");
+    canvas1.addEventListener("contextmenu", function(e){ e.stopPropagation(); e.preventDefault(); return false; }); //Need this to disable the menu that pops up on right clicking
+    
+    let canvas2 = document.getElementById("GLCanvas2");
+    let ctx2 = canvas2.getContext("2d");
+    canvas2.addEventListener("contextmenu", function(e){ e.stopPropagation(); e.preventDefault(); return false; }); //Need this to disable the menu that pops up on right clicking
+    
+
+    let glcanvas = document.getElementById("mycanvas");
+    let sceneCanvas = new SceneCanvas(glcanvas, "ggslac/shaders/", "ggslac/meshes/");
+    sceneCanvas.gui.close();
+
+    let time = 0.0;
+    let lastTime = (new Date()).getTime();
+
+    function repaint() {
+        let camera = sceneCanvas.camera;
+        let right = camera.right;
+        let orig = glMatrix.vec3.create();
+        glMatrix.vec3.copy(orig, camera.pos);
+        glMatrix.vec3.scaleAndAdd(camera.pos, orig, right, IPD/2);
+        sceneCanvas.repaint(); // Update rendering
+        offscreen.updateTexture();
+        offscreen.render();
+        ctx1.drawImage(offscreen.glcanvas, 0, 0, 400, 400);
+        
+        glMatrix.vec3.scaleAndAdd(camera.pos, orig, right, -IPD/2);
+        sceneCanvas.repaint(); // Update rendering
+        offscreen.updateTexture();
+        offscreen.render();
+        ctx2.drawImage(offscreen.glcanvas, 0, 0, 400, 400);
+
+        camera.pos = orig;
+
+        // Move forward
+        let thisTime = (new Date()).getTime();
+        let dt = (thisTime - lastTime)/1000.0; // Change in time in seconds
+        time += dt;
+        lastTime = thisTime;
+        let T = glMatrix.vec3.create();
+        glMatrix.vec3.cross(T, camera.up, camera.right);
+        glMatrix.vec3.scaleAndAdd(camera.pos, camera.pos, T, dt/5);
+
+        requestAnimationFrame(repaint);
+    }
+
+    $.get("mike/artcontest.json", function(scene) {
+        try {
+            sceneCanvas.setupScene(scene, glcanvas.clientWidth, glcanvas.clientHeight);
+        }
+        catch (err) {
+            scene = JSON.parse(scene);
+            console.log(scene);
+            sceneCanvas.setupScene(scene, glcanvas.clientWidth, glcanvas.clientHeight);
+        }
+        finally {
+            sceneCanvas.drawEdges = false;
+            sceneCanvas.updateMeshDrawings();
+            time = 0.0;
+            lastTime = (new Date()).getTime();
+            requestAnimFrame(repaint);
+        }
+
+    });
+
+    let offscreen = new OffscreenRender(glcanvas, "ggslac/shaders/");
+    offscreen.setupShader("texCardboard");
+    
+    
+    
+    
+</script>
+
+</body>
+</html>
